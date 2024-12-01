@@ -1,0 +1,1 @@
+Lightweight wrapper around peerjs-server to host WebRTC games
