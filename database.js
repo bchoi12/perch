@@ -6,8 +6,38 @@ class Database {
 		this.json = {};
 	}
 
+	static parseId(id) {
+		let parts = id.split("-");
+		if (parts.length === 2) {
+			return [parts[0], parts[1], ""];
+		}
+		if (parts.length === 3) {
+			return [parts[0], parts[1], parts[2]];
+		}
+		return ["", "", ""];
+	}
+
+	hasRoom(roomId) {
+		if (roomId === "") {
+			return true;
+		}
+		return this.rooms.has(roomId);
+	}
+
+	testJoin(roomId, password) {
+		if (!this.hasRoom(roomId)) {
+			return false;
+		}
+
+		return this.rooms.get(roomId).testJoin(password);
+	}
+
+	handle(result) {
+		// TODO: implement
+	}
+
 	addClient(client) {
-		const [gameId, roomId, userId] = this.parseId(client.getId());
+		const [gameId, roomId, userId] = Database.parseId(client.getId());
 
 		if (roomId.length === 0) {
 			console.error("Cannot add invalid client", client.getId());
@@ -24,7 +54,7 @@ class Database {
 	}
 
 	removeClient(client) {
-		const [gameId, roomId, userId] = this.parseId(client.getId());
+		const [gameId, roomId, userId] = Database.parseId(client.getId());
 
 		if (roomId.length === 0) {
 			console.error("Cannot remove invalid client", client.getId());
@@ -41,17 +71,6 @@ class Database {
 		}
 
 		this.updateJSON(gameId, roomId, userId);
-	}
-
-	parseId(id) {
-		let parts = id.split("-");
-		if (parts.length === 2) {
-			return [parts[0], parts[1], ""];
-		}
-		if (parts.length === 3) {
-			return [parts[0], parts[1], parts[2]];
-		}
-		return ["", "", ""];
 	}
 
 	updateJSON(gameId, roomId, userId) {
@@ -80,6 +99,9 @@ class Room {
 		this.id = id;
 		this.clients = new Map();
 		this.hostToken = null;
+		this.password = "";
+		this.numPlayers = 0;
+		this.maxPlayers = 0;
 	}
 
 	size() { return this.clients.size; }
@@ -99,6 +121,16 @@ class Room {
 		if (client.getToken() === this.hostToken) {
 			this.hostToken = null;
 		}
+	}
+
+	testJoin(password) {
+		if (this.full()) {
+			return false;
+		}
+		if (this.password === "") {
+			return true;
+		}
+		return this.password === password;
 	}
 }
 
