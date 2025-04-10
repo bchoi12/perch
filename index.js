@@ -1,8 +1,8 @@
 const express = require("express");
 const { ExpressPeerServer } = require("peer");
 const { WebSocketServer } = require("ws");
-const { ConnectionParser } = require("./connection_parser.js");
 const { Database, Room } = require ("./database.js");
+const { ReqParser } = require("./req_parser.js");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,7 +14,7 @@ const server = app.listen(port, () => {
 });
 
 const database = new Database();
-const parser = new ConnectionParser();
+const parser = new ReqParser();
 
 const wssShouldHandle = (req) => {
   if (!req || !req.url) {
@@ -23,11 +23,13 @@ const wssShouldHandle = (req) => {
   }
 
   const result = parser.parse(req.url);
-  if (result.room === "") {
+  const [gameId, roomId, userId] = Database.parseId(result.id);
+
+  console.log(result);
+
+  if (roomId === "") {
     return false;
   }
-
-  const [gameId, roomId, userId] = Database.parseId(client.getId());
   if (result.host) {
     if (result.maxPlayers <= 0) {
       return false;
@@ -39,15 +41,15 @@ const wssShouldHandle = (req) => {
     if (!database.hasRoom(roomId)) {
       return false;
     }
-    if (!database.testJoin(result.room, result.password)) {
+    if (!database.testJoin(roomId, result.password)) {
       return false;
     }
   }
-
   return true;
 }
 const createWebSocketServer = (options) => {
   const wss = new WebSocketServer(options);
+  console.log("Initialize WebSocketServer");
 
   wss.shouldHandle = wssShouldHandle;
 
@@ -61,11 +63,11 @@ const createWebSocketServer = (options) => {
     const ok = database.handle(result);
 
     if (!ok) {
+      console.error("Failed to handle result", result);
       socket.close();
     }
-  });
 
-  wss.on("connection", (socket, req) => {
+    /*
     socket.on("message", (data) => {
       try {
         // eslint-disable-next-line @typescript-eslint/no-base-to-string
@@ -75,6 +77,7 @@ const createWebSocketServer = (options) => {
         this.emit("error", e);
       }
     });
+    */
   });
   return wss;
 };
@@ -82,24 +85,23 @@ const createWebSocketServer = (options) => {
 const peerServer = ExpressPeerServer(server, {
   allow_discovery: false,
   path: "/",
-  createWebSocketServer: (options) => {
-    // https://github.com/websockets/ws/blob/master/lib/websocket-server.js
-    let wss = new WebSocketServer({
-      ...options,
-      createWebSocketServer: createWebSocketServer,
-    });
-    return wss;
-  },
-});
-peerServer.on('connection', (client) => {
-  database.addClient(client);
+  // https://github.com/websockets/ws/blob/master/lib/websocket-server.js
+  createWebSocketServer: createWebSocketServer,
 });
 peerServer.on('disconnect', (client) => {
   database.removeClient(client);
 });
-app.use("/peer/:pw", peerServer);
-app.get("/rooms", (req, res, next) => {
+
+// base + password + max players (0 if client)
+app.use("/peer/:pw/:p", peerServer);
+app.get("/rooms", (req, res) => {
   res.send(database.roomJSON());
 });
 
-// TODO: also need way to update room metadata (update only, no put)
+// update num players, id used for verification
+app.put("/room", (req, res) => {
+  if (!req.query || !req.query.id || !req.query.p) {
+    return;
+  }
+  database.updatePlayers(req.query.id, req.query.p);
+});

@@ -33,24 +33,41 @@ class Database {
 	}
 
 	handle(result) {
-		// TODO: implement
-	}
-
-	addClient(client) {
-		const [gameId, roomId, userId] = Database.parseId(client.getId());
+		const [gameId, roomId, userId] = Database.parseId(result.id);
 
 		if (roomId.length === 0) {
 			console.error("Cannot add invalid client", client.getId());
-			return;
+			return false;
 		}
 
 		if (!this.rooms.has(roomId)) {
-			this.rooms.set(roomId, new Room(roomId));
+			this.rooms.set(roomId, new Room(roomId, userId));
 		}
 
-		this.rooms.get(roomId).addClient(client);
+		const ok = this.rooms.get(roomId).handle(result);
+		if (!ok) {
+			return false;
+		}
 
-		this.updateJSON(gameId, roomId, userId);
+		this.updateJSON(roomId);
+		return true;
+	}
+
+	updatePlayers(id, numPlayers) {
+		const [gameId, roomId, userId] = Database.parseId(id);
+
+		if (!this.hasRoom(roomId)) {
+			return false;
+		}
+
+		let room = this.rooms.get(roomId);
+		if (room.hostId() !== userId) {
+			return false;
+		}
+
+		room.setNumPlayers(numPlayers);
+		this.updateJSON(roomId);
+		return true;
 	}
 
 	removeClient(client) {
@@ -70,11 +87,17 @@ class Database {
 			}
 		}
 
-		this.updateJSON(gameId, roomId, userId);
+		this.updateJSON(roomId);
 	}
 
-	updateJSON(gameId, roomId, userId) {
-		if (!this.rooms.has(roomId) || this.rooms.get(roomId).empty()) {
+	updateJSON(roomId) {
+		if (!this.rooms.has(roomId)) {
+			delete this.json[roomId];
+			return;
+		}
+
+		const room = this.rooms.get(roomId);
+		if (room.empty() || !room.isPublic()) {
 			delete this.json[roomId];
 			return;
 		}
@@ -84,8 +107,9 @@ class Database {
 		}
 
 		let obj = this.json[roomId];
-		const room = this.rooms.get(roomId);
-		obj.p = room.size();
+		obj.p = room.numPlayers;
+		obj.m = room.maxPlayers;
+		obj.r = room.region;
 	}
 
 	roomJSON() {
@@ -95,29 +119,55 @@ class Database {
 
 class Room {
 
-	constructor(id) {
-		this.id = id;
-		this.clients = new Map();
+	constructor(roomId, hostId) {
+		this.roomId = roomId;
+		this.hostId = hostId;
+
 		this.hostToken = null;
 		this.password = "";
 		this.numPlayers = 0;
 		this.maxPlayers = 0;
+		this.region = "BIRDTOWN";
 	}
 
-	size() { return this.clients.size; }
-	empty() { return this.clients.size === 0 || this.hostToken === null; }
+	id() { return this.roomId; }
+	hostId() { return this.hostId; }
 
-	addClient(client) {
-		this.clients.set(client.getToken(), client);
+	full() { return this.numPlayers >= this.maxPlayers; }
+	empty() { return this.numPlayers === 0 || this.hostToken === null; }
+	isPublic() { return this.password === ""; }
 
-		if (this.hostToken === null) {
-			this.hostToken = client.getToken();
+	handle(result) {
+		if (result.host) {
+			if (this.hostToken !== null) {
+				console.error("Tried to rehost existing room:", this.hostToken, result);
+				return false;
+			}
+
+			this.hostToken = result.token;
+			this.password = result.password;
+			this.numPlayers = 1;
+			this.maxPlayers = result.maxPlayers;
+		} else {
+			if (this.empty()) {
+				console.error("Tried to join empty room:", result);
+				return false;
+			}
+			if (this.full() || !this.testJoin(result.password)) {
+				return false;
+			}
+
+			this.numPlayers++;
 		}
+
+		return true;
+	}
+
+	setNumPlayers(numPlayers) {
+		this.numPlayers = numPlayers;
 	}
 
 	removeClient(client) {
-		this.clients.delete(client.getToken());
-
 		if (client.getToken() === this.hostToken) {
 			this.hostToken = null;
 		}
