@@ -53,7 +53,7 @@ class Database {
 		return true;
 	}
 
-	updatePlayers(id, numPlayers) {
+	updatePlayers(id, token, numPlayers) {
 		const [gameId, roomId, userId] = Database.parseId(id);
 
 		if (!this.hasRoom(roomId)) {
@@ -61,7 +61,7 @@ class Database {
 		}
 
 		let room = this.rooms.get(roomId);
-		if (room.hostId() !== userId) {
+		if (token !== room.hostToken) {
 			return false;
 		}
 
@@ -97,7 +97,7 @@ class Database {
 		}
 
 		const room = this.rooms.get(roomId);
-		if (room.empty() || !room.isPublic()) {
+		if (room.empty() || !room.public) {
 			delete this.json[roomId];
 			return;
 		}
@@ -110,6 +110,7 @@ class Database {
 		obj.p = room.numPlayers;
 		obj.m = room.maxPlayers;
 		obj.r = room.region;
+		obj.c = room.creationTime;
 	}
 
 	roomJSON() {
@@ -127,7 +128,10 @@ class Room {
 		this.password = "";
 		this.numPlayers = 0;
 		this.maxPlayers = 0;
+		this.public = false;
 		this.region = "BIRDTOWN";
+
+		this.creationTime = Date.now();
 	}
 
 	id() { return this.roomId; }
@@ -135,7 +139,6 @@ class Room {
 
 	full() { return this.numPlayers >= this.maxPlayers; }
 	empty() { return this.numPlayers === 0 || this.hostToken === null; }
-	isPublic() { return this.password === ""; }
 
 	handle(result) {
 		if (result.host) {
@@ -144,6 +147,7 @@ class Room {
 				return false;
 			}
 
+			this.public = result.public;
 			this.hostToken = result.token;
 			this.password = result.password;
 			this.numPlayers = 1;

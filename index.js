@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const { ExpressPeerServer } = require("peer");
 const { WebSocketServer } = require("ws");
 const { Database, Room } = require ("./database.js");
@@ -15,6 +16,20 @@ const server = app.listen(port, () => {
 
 const database = new Database();
 const parser = new ReqParser();
+let origins = [
+  "http://birdtown.net",
+  "https://birdtown.net",
+  "http://bchoi12.itch.io",
+  "https://bchoi12.itch.io",
+];
+
+if (process.env.NODE_ENV === "development") {
+  console.log("Allowing localhost:8080 origin");
+  origins.push("http://localhost:8080");
+}
+const corsOptions = {
+  origin: origins,
+}
 
 const wssShouldHandle = (req) => {
   if (!req || !req.url) {
@@ -24,8 +39,6 @@ const wssShouldHandle = (req) => {
 
   const result = parser.parse(req.url);
   const [gameId, roomId, userId] = Database.parseId(result.id);
-
-  console.log(result);
 
   if (roomId === "") {
     return false;
@@ -66,18 +79,6 @@ const createWebSocketServer = (options) => {
       console.error("Failed to handle result", result);
       socket.close();
     }
-
-    /*
-    socket.on("message", (data) => {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
-        const message = JSON.parse(data.toString());
-        console.log(message);
-      } catch (e) {
-        this.emit("error", e);
-      }
-    });
-    */
   });
   return wss;
 };
@@ -92,16 +93,29 @@ peerServer.on('disconnect', (client) => {
   database.removeClient(client);
 });
 
-// base + password + max players (0 if client)
-app.use("/peer/:pw/:p", peerServer);
+app.use(cors(corsOptions));
+
+// password + params
+app.use("/peer/:pw/:params", peerServer);
 app.get("/rooms", (req, res) => {
   res.send(database.roomJSON());
 });
 
-// update num players, id used for verification
+// update num players, token used for verification
 app.put("/room", (req, res) => {
-  if (!req.query || !req.query.id || !req.query.p) {
+  if (!req.query || !req.query.id || !req.query.t || !req.query.p) {
+    res.sendStatus(400);
     return;
   }
-  database.updatePlayers(req.query.id, req.query.p);
+  const numPlayers = Number(req.query.p);
+  if (Number.isNaN(numPlayers) || numPlayers < 0) {
+    res.sendStatus(400);
+    return;
+  }
+
+  if (!database.updatePlayers(req.query.id, req.query.t, numPlayers)) {
+    res.sendStatus(400);
+    return;
+  }
+  res.sendStatus(200);
 });

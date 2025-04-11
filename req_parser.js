@@ -1,18 +1,18 @@
 
 class ReqParser {
 
-	constructor() {}
+	constructor() {
+		// base + password + hostVars + query
+		this.numParams = 4;
+	}
 
 	valid(url) {
 		const parts = url.split("/");
 
-		if (parts.length < 4) {
+		if (parts.length < this.numParams + 1) {
 		  return false;
 		}
 		if (parts[1] !== "peer") {
-		  return false;
-		}
-		if (parts[2] === "") {
 		  return false;
 		}
 		if (!parts[parts.length - 1].startsWith("peerjs")) {
@@ -22,11 +22,13 @@ class ReqParser {
 	}
 
 	parse(url) {
-		console.log(url);
 		let result = {
-			host: false,
-			maxPlayers: 0,
 			password: "",
+
+			host: false,
+			public: false,
+			maxPlayers: 0,
+
 			id: "",
 			token: "",
 		}
@@ -36,19 +38,24 @@ class ReqParser {
 		}
 
 		const parts = url.split("/");
-		if (parts.length < 4) {
+		if (parts.length < this.numParams) {
 			return result;
 		}
 
-		result.password = truncate(parts[1], 10);
-		const maxPlayers = Number(parts[2]);
-		if (!Number.isNaN(maxPlayers)) {
-			if (maxPlayers > 0) {
-				result.maxPlayers = maxPlayers;
-				result.host = true;
-			} else {
-				result.host = false;
+		result.password = this.truncate(parts[1], 10);
+
+		const hostParams = parts[2].split(",");
+		if (hostParams.length >= 2) {
+			result.host = true;
+			result.public = hostParams[0] === "pub";
+			const maxPlayers = Number(hostParams[1]);
+			if (!Number.isNaN(maxPlayers)) {
+				if (maxPlayers > 0) {
+					result.maxPlayers = maxPlayers;
+				}
 			}
+		} else {
+			result.host = false;
 		}
 
 		const slug = parts[parts.length - 1];
