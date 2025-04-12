@@ -2,15 +2,18 @@
 
 ## Overview
 
-Lightweight wrapper around peerjs-server for hosting peer-to-peer games
+Perch is a lightweight server for facilitating P2P connections through WebRTC. Players can directly connect to each other by sharing a URL or short room code.
+
+Built with node.js, express.js, and peerjs-server.
 
 ## Features
 
-Adds basic support for
+In addition to peerjs-server features:
  * lobby system with public/private rooms
  * password protection
  * maximum player limits
+ * room metadata (name, region)
 
  ## Dev Notes
 
- ssh root@<ip>
+ ssh root@ip
