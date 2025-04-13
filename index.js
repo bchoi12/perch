@@ -17,10 +17,12 @@ const server = app.listen(port, () => {
 const database = new Database();
 const parser = new ReqParser();
 let origins = [
-  "http://birdtown.net",
-  "https://birdtown.net",
   "http://bchoi12.itch.io",
   "https://bchoi12.itch.io",
+  "http://birdtown.net",
+  "https://birdtown.net",
+  "http://brianchoi.net",
+  "https://brianchoi.net",
 ];
 
 if (process.env.NODE_ENV === "development") {
