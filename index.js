@@ -24,8 +24,9 @@ let origins = [
   "http://brianchoi.net",
   "https://brianchoi.net",
 ];
+const isDev = process.env.NODE_ENV === "development";
 
-if (process.env.NODE_ENV === "development") {
+if (isDev) {
   console.log("Allowing localhost:8080 origin");
   origins.push("http://localhost:8080");
 }
@@ -90,6 +91,9 @@ const peerServer = ExpressPeerServer(server, {
   path: "/",
   // https://github.com/websockets/ws/blob/master/lib/websocket-server.js
   createWebSocketServer: createWebSocketServer,
+  corsOptions: corsOptions,
+  concurrentLimit: 5000,
+  proxied: !isDev,
 });
 peerServer.on('disconnect', (client) => {
   database.removeClient(client);
