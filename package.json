@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Online lobby system for P2P games using peer.js",
   "engines": {
-    "node": "22.x",
+    "node": "22.x"
   },
   "main": "index.js",
   "scripts": {
