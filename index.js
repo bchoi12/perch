@@ -106,6 +106,9 @@ app.use("/peer/:pw/:params", peerServer);
 app.get("/rooms", (req, res) => {
   res.send(database.roomJSON());
 });
+app.get("/stats", (req, res) => {
+  res.send(database.statsJSON());
+});
 
 // update num players, token used for verification
 app.put("/room", (req, res) => {

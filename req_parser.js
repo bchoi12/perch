@@ -1,5 +1,5 @@
 
-const { lookup } = require('ip-location-api');
+// const { lookup } = require('ip-location-api');
 
 class ReqParser {
 
@@ -91,6 +91,8 @@ class ReqParser {
 			}
 		});
 
+		// Not working...
+		/*
 	    const ip = req.headers['x-real-ip'] || req.connection.remoteAddress;
 	    if (ip) {
 		    const location = lookup(ip);
@@ -98,6 +100,7 @@ class ReqParser {
 		    	result.region = location.country;
 		    }
 	    }
+	    */
 
 		return result;
 	}

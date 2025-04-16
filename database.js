@@ -4,6 +4,9 @@ class Database {
 	constructor() {
 		this.rooms = new Map();
 		this.json = {};
+
+		this.hourlyRooms = new Map();
+		this.hourlyPlayers = new Map();
 	}
 
 	static parseId(id) {
@@ -40,14 +43,29 @@ class Database {
 			return false;
 		}
 
+		const hour = new Date().getHours();
+		if (!this.hourlyRooms.has(hour)) {
+			this.hourlyRooms.set(hour, this.rooms.size);
+		}
+		if (!this.hourlyPlayers.has(hour)) {
+			this.hourlyPlayers.set(hour, this.getNumPlayers());
+		}
+
+		let newRoom = false;
 		if (!this.rooms.has(roomId)) {
 			this.rooms.set(roomId, new Room(roomId, userId));
+			newRoom = true;
 		}
 
 		const ok = this.rooms.get(roomId).handle(result);
 		if (!ok) {
 			return false;
 		}
+
+		if (newRoom) {
+			this.hourlyRooms.set(hour, this.hourlyRooms.get(hour) + 1);
+		}
+		this.hourlyPlayers.set(hour, this.hourlyPlayers.get(hour) + 1);
 
 		this.updateJSON(roomId);
 		return true;
@@ -90,6 +108,14 @@ class Database {
 		this.updateJSON(roomId);
 	}
 
+	getNumPlayers() {
+		let players = 0;
+		this.rooms.forEach((room) => {
+			players += room.numPlayers;
+		});
+		return players;
+	}
+
 	updateJSON(roomId) {
 		if (!this.rooms.has(roomId)) {
 			delete this.json[roomId];
@@ -115,6 +141,15 @@ class Database {
 
 	roomJSON() {
 		return this.json;
+	}
+
+	statsJSON() {
+		return {
+			games: this.rooms.size,
+			players: this.getNumPlayers(),
+			hourlyGames: Object.fromEntries(this.hourlyRooms),
+			hourlyPlayers: Object.fromEntries(this.hourlyPlayers),
+		}
 	}
 }
 
