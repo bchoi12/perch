@@ -1,4 +1,6 @@
 
+const { lookup } = require('ip-location-api');
+
 class ReqParser {
 
 	constructor() {
@@ -21,7 +23,7 @@ class ReqParser {
 		return true;
 	}
 
-	parse(url) {
+	parse(req) {
 		let result = {
 			password: "",
 
@@ -31,6 +33,12 @@ class ReqParser {
 
 			id: "",
 			token: "",
+			region: "",
+		}
+
+		let url = req.url;
+		if (!url) {
+			return result;
 		}
 
 		if (url.startsWith("/")) {
@@ -82,6 +90,15 @@ class ReqParser {
 				result.token = values[1];
 			}
 		});
+
+	    const ip = req.headers['x-real-ip'] || req.connection.remoteAddress;
+	    if (ip) {
+		    const location = lookup(ip);
+		    if (location && location.country) {
+		    	result.region = location.country;
+		    }
+	    }
+
 		return result;
 	}
 

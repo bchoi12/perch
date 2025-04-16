@@ -129,7 +129,7 @@ class Room {
 		this.numPlayers = 0;
 		this.maxPlayers = 0;
 		this.public = false;
-		this.region = "BIRDTOWN";
+		this.region = "";
 
 		this.creationTime = Date.now();
 	}
@@ -152,6 +152,7 @@ class Room {
 			this.password = result.password;
 			this.numPlayers = 1;
 			this.maxPlayers = result.maxPlayers;
+			this.region = result.region;
 		} else {
 			if (this.empty()) {
 				console.error("Tried to join empty room:", result);

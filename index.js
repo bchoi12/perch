@@ -40,7 +40,7 @@ const wssShouldHandle = (req) => {
     return false;
   }
 
-  const result = parser.parse(req.url);
+  const result = parser.parse(req);
   const [gameId, roomId, userId] = Database.parseId(result.id);
 
   if (roomId === "") {
@@ -75,7 +75,7 @@ const createWebSocketServer = (options) => {
       return;
     }
 
-    const result = parser.parse(req.url);
+    const result = parser.parse(req);
     const ok = database.handle(result);
 
     if (!ok) {
