@@ -44,20 +44,25 @@ const wssShouldHandle = (req) => {
   const [gameId, roomId, userId] = Database.parseId(result.id);
 
   if (roomId === "") {
+    console.error("Empty room", result);
     return false;
   }
   if (result.host) {
     if (result.maxPlayers <= 0) {
+      console.error("Invalid max", result);
       return false;
     }
     if (database.hasRoom(roomId)) {
+      console.error("Room exists", result);
       return false;
     }
   } else {
     if (!database.hasRoom(roomId)) {
+      console.error("Room does not exist", result);
       return false;
     }
-    if (!database.testJoin(roomId, result.password)) {
+    if (!database.testJoin(roomId, result)) {
+      console.error("Cannot join", result);
       return false;
     }
   }
@@ -79,7 +84,6 @@ const createWebSocketServer = (options) => {
     const ok = database.handle(result);
 
     if (!ok) {
-      console.error("Failed to handle result", result);
       socket.close();
     }
   });

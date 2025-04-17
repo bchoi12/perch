@@ -1,5 +1,5 @@
 
-// const { lookup } = require('ip-location-api');
+const { profanity, CensorType } = require('@2toad/profanity');
 
 class ReqParser {
 
@@ -8,7 +8,12 @@ class ReqParser {
 		this.numParams = 4;
 	}
 
-	valid(url) {
+	valid(req) {
+		if (!req || !req.url) {
+			return false;
+		}
+
+		const url = req.url;
 		const parts = url.split("/");
 
 		if (parts.length < this.numParams + 1) {
@@ -31,13 +36,21 @@ class ReqParser {
 			public: false,
 			maxPlayers: 0,
 
+			name: "",
 			id: "",
 			token: "",
-			region: "",
+			latlng: "",
 		}
 
 		let url = req.url;
 		if (!url) {
+			console.error("Missing URL");
+			return result;
+		}
+
+		// Ignore absurdly long requests
+		if (url.length > 500) {
+			console.error("URL too long", req.url);
 			return result;
 		}
 
@@ -46,14 +59,16 @@ class ReqParser {
 		}
 
 		const parts = url.split("/");
-		if (parts.length < this.numParams) {
+		if (parts.length !== this.numParams) {
+			console.error("Invalid number of params", req.url);
 			return result;
 		}
 
 		result.password = this.truncate(parts[1], 10);
 
-		const hostParams = parts[2].split(",");
-		if (hostParams.length >= 2) {
+		let decodedParams = decodeURIComponent(parts[2]);
+		let hostParams = decodedParams.replace(/[^a-zA-Z0-9,!-\s*\[\]]/g, "").split("!");
+		if (hostParams.length === 4) {
 			result.host = true;
 			result.public = hostParams[0] === "pub";
 			const maxPlayers = Number(hostParams[1]);
@@ -62,17 +77,21 @@ class ReqParser {
 					result.maxPlayers = maxPlayers;
 				}
 			}
+			result.name = profanity.censor(this.truncate(hostParams[2], 16));
+			result.latlng = hostParams[3];
 		} else {
 			result.host = false;
 		}
 
 		const slug = parts[parts.length - 1];
 		if (!slug.startsWith("peerjs")) {
+			console.error("Malformed slug", req.url);
 			return result;
 		}
 
-		const slugParts = slug.split("?");
+		const slugParts = slug.split(/\?(.*)/s);
 		if (slugParts.length <= 1) {
+			console.error("Missing query params", req.url);
 			return result;
 		}
 		const query = slugParts[1];
@@ -90,17 +109,6 @@ class ReqParser {
 				result.token = values[1];
 			}
 		});
-
-		// Not working...
-		/*
-	    const ip = req.headers['x-real-ip'] || req.connection.remoteAddress;
-	    if (ip) {
-		    const location = lookup(ip);
-		    if (location && location.country) {
-		    	result.region = location.country;
-		    }
-	    }
-	    */
 
 		return result;
 	}

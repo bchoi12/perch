@@ -27,12 +27,12 @@ class Database {
 		return this.rooms.has(roomId);
 	}
 
-	testJoin(roomId, password) {
+	testJoin(roomId, result) {
 		if (!this.hasRoom(roomId)) {
 			return false;
 		}
 
-		return this.rooms.get(roomId).testJoin(password);
+		return this.rooms.get(roomId).testJoin(result);
 	}
 
 	handle(result) {
@@ -133,9 +133,10 @@ class Database {
 		}
 
 		let obj = this.json[roomId];
+		obj.n = room.name;
 		obj.p = room.numPlayers;
 		obj.m = room.maxPlayers;
-		obj.r = room.region;
+		obj.l = room.latlng;
 		obj.c = room.creationTime;
 	}
 
@@ -159,12 +160,14 @@ class Room {
 		this.roomId = roomId;
 		this.hostId = hostId;
 
+		this.name = "Birdtown Game";
 		this.hostToken = null;
+		this.tokens = new Set();
 		this.password = "";
 		this.numPlayers = 0;
 		this.maxPlayers = 0;
 		this.public = false;
-		this.region = "";
+		this.latlng = "";
 
 		this.creationTime = Date.now();
 	}
@@ -182,23 +185,31 @@ class Room {
 				return false;
 			}
 
+			this.name = result.name;
 			this.public = result.public;
 			this.hostToken = result.token;
 			this.password = result.password;
 			this.numPlayers = 1;
 			this.maxPlayers = result.maxPlayers;
-			this.region = result.region;
+			this.latlng = result.latlng;
 		} else {
 			if (this.empty()) {
 				console.error("Tried to join empty room:", result);
 				return false;
 			}
-			if (this.full() || !this.testJoin(result.password)) {
+			if (this.full()) {
+				console.error("Room is full:", result);
+				return false;
+			}
+			if (!this.testJoin(result)) {
+				console.error("Token exists or password is incorrect:", result);
 				return false;
 			}
 
 			this.numPlayers++;
 		}
+
+		this.tokens.add(result.token);
 
 		return true;
 	}
@@ -213,14 +224,17 @@ class Room {
 		}
 	}
 
-	testJoin(password) {
+	testJoin(result) {
+		if (this.tokens.has(result.token)) {
+			return false;
+		}
 		if (this.full()) {
 			return false;
 		}
 		if (this.password === "") {
 			return true;
 		}
-		return this.password === password;
+		return this.password === result.password;
 	}
 }
 

@@ -12,7 +12,7 @@ In addition to peerjs-server features:
  * lobby system with public/private rooms
  * password protection
  * maximum player limits
- * room metadata (name, region)
+ * room metadata (name, latlng)
 
  ## Dev Notes
 
