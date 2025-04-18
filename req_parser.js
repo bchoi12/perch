@@ -4,8 +4,8 @@ const { profanity, CensorType } = require('@2toad/profanity');
 class ReqParser {
 
 	constructor() {
-		// base + password + hostVars + query
-		this.numParams = 4;
+		// base + room + password + hostVars + query
+		this.numParams = 5;
 	}
 
 	valid(req) {
@@ -30,6 +30,7 @@ class ReqParser {
 
 	parse(req) {
 		let result = {
+			room: "",
 			password: "",
 
 			host: false,
@@ -65,9 +66,10 @@ class ReqParser {
 			return result;
 		}
 
-		result.password = this.truncate(parts[1], 10);
+		result.room = this.truncate(parts[1], 6);
+		result.password = this.truncate(parts[2], 10);
 
-		let decodedParams = decodeURIComponent(parts[2]);
+		let decodedParams = decodeURIComponent(parts[3]);
 		let hostParams = decodedParams.replace(/[^a-zA-Z0-9,\.!-\s*\[\]]/g, "").split("!");
 		if (hostParams.length === 5) {
 			result.host = true;

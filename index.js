@@ -41,9 +41,8 @@ const wssShouldHandle = (req) => {
   }
 
   const result = parser.parse(req);
-  const [gameId, roomId, userId] = Database.parseId(result.id);
 
-  if (roomId === "") {
+  if (result.room === "") {
     console.error("Empty room", result);
     return false;
   }
@@ -52,16 +51,16 @@ const wssShouldHandle = (req) => {
       console.error("Invalid max", result);
       return false;
     }
-    if (database.hasRoom(roomId)) {
+    if (database.hasRoom(result.room)) {
       console.error("Room exists", result);
       return false;
     }
   } else {
-    if (!database.hasRoom(roomId)) {
+    if (!database.hasRoom(result.room)) {
       console.error("Room does not exist", result);
       return false;
     }
-    if (!database.testJoin(roomId, result)) {
+    if (!database.testJoin(result.room, result)) {
       console.error("Cannot join", result);
       return false;
     }
@@ -105,8 +104,8 @@ peerServer.on('disconnect', (client) => {
 
 app.use(cors(corsOptions));
 
-// password + params
-app.use("/peer/:pw/:params", peerServer);
+// room + password + host params
+app.use("/peer/:room/:pw/:params", peerServer);
 app.get("/rooms", (req, res) => {
   res.send(database.roomJSON());
 });

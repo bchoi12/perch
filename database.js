@@ -39,7 +39,7 @@ class Database {
 	handle(result) {
 		const [gameId, roomId, userId] = Database.parseId(result.id);
 
-		if (roomId.length === 0) {
+		if (result.room.length === 0) {
 			console.error("Cannot add invalid client", client.getId());
 			return false;
 		}
@@ -53,12 +53,12 @@ class Database {
 		}
 
 		let newRoom = false;
-		if (!this.rooms.has(roomId)) {
-			this.rooms.set(roomId, new Room(roomId, userId));
+		if (!this.rooms.has(result.room)) {
+			this.rooms.set(result.room, new Room(result.room, userId));
 			newRoom = true;
 		}
 
-		const ok = this.rooms.get(roomId).handle(result);
+		const ok = this.rooms.get(result.room).handle(result);
 		if (!ok) {
 			return false;
 		}
@@ -69,7 +69,7 @@ class Database {
 		}
 		this.hourlyPlayers.set(hour, this.hourlyPlayers.get(hour) + 1);
 
-		this.updateJSON(roomId);
+		this.updateJSON(result.room);
 		return true;
 	}
 
@@ -102,10 +102,12 @@ class Database {
 		if (this.rooms.has(roomId)) {
 			let room = this.rooms.get(roomId);
 			room.removeClient(client);
-			this.numPlayers -= 1;
 
 			if (room.empty()) {
+				this.numPlayers -= room.numPlayers;
 				this.rooms.delete(roomId);
+			} else {
+				this.numPlayers--;
 			}
 		}
 
