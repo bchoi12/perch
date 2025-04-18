@@ -40,6 +40,7 @@ class ReqParser {
 			id: "",
 			token: "",
 			latlng: "",
+			version: "",
 		}
 
 		let url = req.url;
@@ -67,8 +68,8 @@ class ReqParser {
 		result.password = this.truncate(parts[1], 10);
 
 		let decodedParams = decodeURIComponent(parts[2]);
-		let hostParams = decodedParams.replace(/[^a-zA-Z0-9,!-\s*\[\]]/g, "").split("!");
-		if (hostParams.length === 4) {
+		let hostParams = decodedParams.replace(/[^a-zA-Z0-9,\.!-\s*\[\]]/g, "").split("!");
+		if (hostParams.length === 5) {
 			result.host = true;
 			result.public = hostParams[0] === "pub";
 			const maxPlayers = Number(hostParams[1]);
@@ -79,6 +80,7 @@ class ReqParser {
 			}
 			result.name = profanity.censor(this.truncate(hostParams[2], 16));
 			result.latlng = hostParams[3];
+			result.version = hostParams[4];
 		} else {
 			result.host = false;
 		}

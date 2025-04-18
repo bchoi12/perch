@@ -3,6 +3,7 @@ class Database {
 
 	constructor() {
 		this.rooms = new Map();
+		this.numPlayers = 0;
 		this.json = {};
 
 		this.hourlyRooms = new Map();
@@ -48,7 +49,7 @@ class Database {
 			this.hourlyRooms.set(hour, this.rooms.size);
 		}
 		if (!this.hourlyPlayers.has(hour)) {
-			this.hourlyPlayers.set(hour, this.getNumPlayers());
+			this.hourlyPlayers.set(hour, this.numPlayers);
 		}
 
 		let newRoom = false;
@@ -61,6 +62,7 @@ class Database {
 		if (!ok) {
 			return false;
 		}
+		this.numPlayers++;
 
 		if (newRoom) {
 			this.hourlyRooms.set(hour, this.hourlyRooms.get(hour) + 1);
@@ -83,6 +85,7 @@ class Database {
 			return false;
 		}
 
+		this.numPlayers -= room.numPlayers - numPlayers;
 		room.setNumPlayers(numPlayers);
 		this.updateJSON(roomId);
 		return true;
@@ -99,6 +102,7 @@ class Database {
 		if (this.rooms.has(roomId)) {
 			let room = this.rooms.get(roomId);
 			room.removeClient(client);
+			this.numPlayers -= 1;
 
 			if (room.empty()) {
 				this.rooms.delete(roomId);
@@ -106,14 +110,6 @@ class Database {
 		}
 
 		this.updateJSON(roomId);
-	}
-
-	getNumPlayers() {
-		let players = 0;
-		this.rooms.forEach((room) => {
-			players += room.numPlayers;
-		});
-		return players;
 	}
 
 	updateJSON(roomId) {
@@ -138,6 +134,7 @@ class Database {
 		obj.m = room.maxPlayers;
 		obj.l = room.latlng;
 		obj.c = room.creationTime;
+		obj.v = room.version;
 	}
 
 	roomJSON() {
@@ -147,7 +144,7 @@ class Database {
 	statsJSON() {
 		return {
 			games: this.rooms.size,
-			players: this.getNumPlayers(),
+			players: this.numPlayers,
 			hourlyGames: Object.fromEntries(this.hourlyRooms),
 			hourlyPlayers: Object.fromEntries(this.hourlyPlayers),
 		}
@@ -168,6 +165,7 @@ class Room {
 		this.maxPlayers = 0;
 		this.public = false;
 		this.latlng = "";
+		this.version = "";
 
 		this.creationTime = Date.now();
 	}
@@ -192,6 +190,7 @@ class Room {
 			this.numPlayers = 1;
 			this.maxPlayers = result.maxPlayers;
 			this.latlng = result.latlng;
+			this.version = result.version;
 		} else {
 			if (this.empty()) {
 				console.error("Tried to join empty room:", result);
