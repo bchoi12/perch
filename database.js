@@ -6,6 +6,7 @@ class Database {
 		this.numPlayers = 0;
 		this.json = {};
 
+		this.currentHour = -1;
 		this.hourlyRooms = new Map();
 		this.hourlyPlayers = new Map();
 	}
@@ -45,12 +46,13 @@ class Database {
 		}
 
 		const hour = new Date().getHours();
-		if (!this.hourlyRooms.has(hour)) {
+		if (!this.hourlyRooms.has(hour) || this.currentHour !== hour) {
 			this.hourlyRooms.set(hour, this.rooms.size);
 		}
-		if (!this.hourlyPlayers.has(hour)) {
+		if (!this.hourlyPlayers.has(hour) || this.currentHour != hour) {
 			this.hourlyPlayers.set(hour, this.numPlayers);
 		}
+		this.currentHour = hour;
 
 		let newRoom = false;
 		if (!this.rooms.has(result.room)) {
