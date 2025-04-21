@@ -41,6 +41,10 @@ const wssShouldHandle = (req) => {
   }
 
   const result = parser.parse(req);
+  if (!result.valid) {
+    console.error("Invalid result", result);
+    return false;
+  }
 
   if (result.room === "") {
     console.error("Empty room", result);
@@ -80,11 +84,20 @@ const createWebSocketServer = (options) => {
     }
 
     const result = parser.parse(req);
-    const ok = database.handle(result);
+    if (!result.valid) {
+      console.error("Invalid result", result);
+      return false;
+    }
 
+    const ok = database.handle(result);
     if (!ok) {
       socket.close();
+      return;
     }
+    console.log("Handled request", req.url, result);
+    socket.on("close", () => {
+      database.removeRoom(result.room);
+    });
   });
   return wss;
 };

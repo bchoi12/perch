@@ -101,17 +101,29 @@ class Database {
 			return;
 		}
 
-		if (this.rooms.has(roomId)) {
-			let room = this.rooms.get(roomId);
-			room.removeClient(client);
-
-			if (room.empty()) {
-				this.numPlayers -= room.numPlayers;
-				this.rooms.delete(roomId);
-			} else {
-				this.numPlayers--;
-			}
+		if (!this.rooms.has(roomId)) {
+			return;
 		}
+
+		let room = this.rooms.get(roomId);
+		room.removeClient(client);
+
+		if (room.empty()) {
+			this.removeRoom(roomId);
+		} else {
+			this.numPlayers--;
+		}
+
+		this.updateJSON(roomId);
+	}
+	removeRoom(roomId) {
+		if (!this.rooms.has(roomId)) {
+			return;
+		}
+
+		let room = this.rooms.get(roomId);
+		this.numPlayers -= room.numPlayers;
+		this.rooms.delete(roomId);
 
 		this.updateJSON(roomId);
 	}
@@ -134,6 +146,9 @@ class Database {
 
 		let obj = this.json[roomId];
 		obj.n = room.name;
+		if (room.password !== "") {
+			obj.pw = 1;
+		}
 		obj.p = room.numPlayers;
 		obj.m = room.maxPlayers;
 		obj.l = room.latlng;

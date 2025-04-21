@@ -42,6 +42,8 @@ class ReqParser {
 			token: "",
 			latlng: "",
 			version: "",
+
+			valid: false,
 		}
 
 		let url = req.url;
@@ -114,6 +116,7 @@ class ReqParser {
 			}
 		});
 
+		result.valid = true;
 		return result;
 	}
 
