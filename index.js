@@ -23,6 +23,8 @@ let origins = [
   "https://birdtown.net",
   "http://brianchoi.net",
   "https://brianchoi.net",
+  "http://1351422251404365835.discordsays.com",
+  "https://1351422251404365835.discordsays.com",
 ];
 const isDev = process.env.NODE_ENV === "development";
 

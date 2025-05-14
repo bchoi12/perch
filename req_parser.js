@@ -64,7 +64,7 @@ class ReqParser {
 
 		const parts = url.split("/");
 		if (parts.length !== this.numParams) {
-			console.error("Invalid number of params", req.url);
+			console.error("Invalid number of params", parts, req.url);
 			return result;
 		}
 
