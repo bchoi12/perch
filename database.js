@@ -154,6 +154,7 @@ class Database {
 		obj.l = room.latlng;
 		obj.c = room.creationTime;
 		obj.v = room.version;
+		obj.t = room.hostToken;
 	}
 
 	roomJSON() {
