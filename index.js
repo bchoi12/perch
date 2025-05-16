@@ -98,7 +98,7 @@ const createWebSocketServer = (options) => {
     }
     console.log("Handled request", req.url, result);
     socket.on("close", () => {
-      database.removeRoom(result.room);
+      database.checkRemoveRoom(result.room);
     });
   });
   return wss;

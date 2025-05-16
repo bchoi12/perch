@@ -116,6 +116,16 @@ class Database {
 
 		this.updateJSON(roomId);
 	}
+	checkRemoveRoom(roomId) {
+		if (!this.rooms.has(roomId)) {
+			return;
+		}
+
+		let room = this.rooms.get(roomId);
+		if (room.empty()) {
+			this.removeRoom(roomId);
+		}
+	}
 	removeRoom(roomId) {
 		if (!this.rooms.has(roomId)) {
 			return;
