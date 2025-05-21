@@ -36,6 +36,7 @@ class ReqParser {
 			host: false,
 			public: false,
 			maxPlayers: 0,
+			sessionToken: "",
 
 			name: "",
 			id: "",
@@ -63,7 +64,7 @@ class ReqParser {
 		}
 
 		const parts = url.split("/");
-		if (parts.length !== this.numParams) {
+		if (parts.length > this.numParams) {
 			console.error("Invalid number of params", parts, req.url);
 			return result;
 		}
@@ -73,7 +74,8 @@ class ReqParser {
 
 		let decodedParams = decodeURIComponent(parts[3]);
 		let hostParams = decodedParams.replace(/[^a-zA-Z0-9,\.!-\s*\[\]]/g, "").split("!");
-		if (hostParams.length === 5) {
+
+		if (hostParams.length >= 5) {
 			result.host = true;
 			result.public = hostParams[0] === "pub";
 			const maxPlayers = Number(hostParams[1]);
@@ -85,6 +87,10 @@ class ReqParser {
 			result.name = profanity.censor(this.truncate(hostParams[2], 16));
 			result.latlng = hostParams[3];
 			result.version = hostParams[4];
+
+			if (hostParams.length > 5) {
+				result.sessionToken = hostParams[5];
+			}
 		} else {
 			result.host = false;
 		}

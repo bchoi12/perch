@@ -3,12 +3,12 @@ class Database {
 
 	constructor() {
 		this.rooms = new Map();
-		this.numPlayers = 0;
 		this.json = {};
 
-		this.currentHour = -1;
-		this.hourlyRooms = new Map();
-		this.hourlyPlayers = new Map();
+		this.currentDay = -1;
+		this.totalNumPlayers = 0;
+		this.totalToday = 0;
+		this.maxConcurrent = 0;
 	}
 
 	static parseId(id) {
@@ -45,31 +45,24 @@ class Database {
 			return false;
 		}
 
-		const hour = new Date().getHours();
-		if (!this.hourlyRooms.has(hour) || this.currentHour !== hour) {
-			this.hourlyRooms.set(hour, this.rooms.size);
+		const day = new Date().getDay();
+		if (this.currentDay !== day) {
+			this.totalToday = 0;
 		}
-		if (!this.hourlyPlayers.has(hour) || this.currentHour != hour) {
-			this.hourlyPlayers.set(hour, this.numPlayers);
-		}
-		this.currentHour = hour;
+		this.currentDay = day;
 
-		let newRoom = false;
 		if (!this.rooms.has(result.room)) {
 			this.rooms.set(result.room, new Room(result.room, userId));
-			newRoom = true;
 		}
 
 		const ok = this.rooms.get(result.room).handle(result);
 		if (!ok) {
 			return false;
 		}
-		this.numPlayers++;
+		this.totalNumPlayers++;
+		this.totalToday++;
 
-		if (newRoom) {
-			this.hourlyRooms.set(hour, this.hourlyRooms.get(hour) + 1);
-		}
-		this.hourlyPlayers.set(hour, this.hourlyPlayers.get(hour) + 1);
+		this.maxConcurrent = Math.max(this.maxConcurrent, this.totalNumPlayers);
 
 		this.updateJSON(result.room);
 		return true;
@@ -83,11 +76,11 @@ class Database {
 		}
 
 		let room = this.rooms.get(roomId);
-		if (token !== room.hostToken) {
+		if (token !== room.sessionToken) {
 			return false;
 		}
 
-		this.numPlayers -= room.numPlayers - numPlayers;
+		this.totalNumPlayers -= room.numPlayers - numPlayers;
 		room.setNumPlayers(numPlayers);
 		this.updateJSON(roomId);
 		return true;
@@ -110,8 +103,6 @@ class Database {
 
 		if (room.empty()) {
 			this.removeRoom(roomId);
-		} else {
-			this.numPlayers--;
 		}
 
 		this.updateJSON(roomId);
@@ -132,7 +123,7 @@ class Database {
 		}
 
 		let room = this.rooms.get(roomId);
-		this.numPlayers -= room.numPlayers;
+		this.totalNumPlayers -= room.numPlayers;
 		this.rooms.delete(roomId);
 
 		this.updateJSON(roomId);
@@ -174,9 +165,9 @@ class Database {
 	statsJSON() {
 		return {
 			games: this.rooms.size,
-			players: this.numPlayers,
-			hourlyGames: Object.fromEntries(this.hourlyRooms),
-			hourlyPlayers: Object.fromEntries(this.hourlyPlayers),
+			players: this.totalNumPlayers,
+			totalToday: this.totalToday,
+			maxConcurrent: this.maxConcurrent,
 		}
 	}
 }
@@ -189,6 +180,7 @@ class Room {
 
 		this.name = "Birdtown Game";
 		this.hostToken = null;
+		this.sessionToken = null;
 		this.tokens = new Set();
 		this.password = "";
 		this.numPlayers = 0;
@@ -216,6 +208,7 @@ class Room {
 			this.name = result.name;
 			this.public = result.public;
 			this.hostToken = result.token;
+			this.sessionToken = result.sessionToken;
 			this.password = result.password;
 			this.numPlayers = 1;
 			this.maxPlayers = result.maxPlayers;
