@@ -5,10 +5,13 @@ class Database {
 		this.rooms = new Map();
 		this.json = {};
 
+		this.created = Date.now();
 		this.currentDay = -1;
-		this.totalNumPlayers = 0;
+		this.currentPlayers = 0;
 		this.totalToday = 0;
-		this.maxConcurrent = 0;
+		this.maxToday = 0;
+		this.totalAllTime = 0;
+		this.maxAllTime = 0;
 	}
 
 	static parseId(id) {
@@ -48,6 +51,7 @@ class Database {
 		const day = new Date().getDay();
 		if (this.currentDay !== day) {
 			this.totalToday = 0;
+			this.maxToday = 0;
 		}
 		this.currentDay = day;
 
@@ -59,10 +63,12 @@ class Database {
 		if (!ok) {
 			return false;
 		}
-		this.totalNumPlayers++;
+		this.currentPlayers++;
 		this.totalToday++;
+		this.totalAllTime++;
 
-		this.maxConcurrent = Math.max(this.maxConcurrent, this.totalNumPlayers);
+		this.maxToday = Math.max(this.maxToday, this.currentPlayers);
+		this.maxAllTime = Math.max(this.maxAllTime, this.currentPlayers);
 
 		this.updateJSON(result.room);
 		return true;
@@ -80,7 +86,7 @@ class Database {
 			return false;
 		}
 
-		this.totalNumPlayers -= room.numPlayers - numPlayers;
+		this.currentPlayers -= room.numPlayers - numPlayers;
 		room.setNumPlayers(numPlayers);
 		this.updateJSON(roomId);
 		return true;
@@ -123,7 +129,7 @@ class Database {
 		}
 
 		let room = this.rooms.get(roomId);
-		this.totalNumPlayers -= room.numPlayers;
+		this.currentPlayers -= room.numPlayers;
 		this.rooms.delete(roomId);
 
 		this.updateJSON(roomId);
@@ -165,9 +171,12 @@ class Database {
 	statsJSON() {
 		return {
 			games: this.rooms.size,
-			players: this.totalNumPlayers,
+			players: this.currentPlayers,
 			totalToday: this.totalToday,
-			maxConcurrent: this.maxConcurrent,
+			maxToday: this.maxToday,
+			totalAllTime: this.totalAllTime,
+			maxAllTime: this.maxAllTime,
+			created: this.created,
 		}
 	}
 }
