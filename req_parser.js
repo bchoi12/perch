@@ -4,7 +4,7 @@ const { profanity, CensorType } = require('@2toad/profanity');
 class ReqParser {
 
 	constructor() {
-		// base + room + password + hostVars + query
+		// base + room + password + vars + query
 		this.numParams = 5;
 	}
 
@@ -73,24 +73,51 @@ class ReqParser {
 		result.password = this.truncate(parts[2], 10);
 
 		let decodedParams = decodeURIComponent(parts[3]);
-		let hostParams = decodedParams.replace(/[^a-zA-Z0-9,\.!-\s*\[\]]/g, "").split("!");
+		let vars = decodedParams.replace(/[^a-zA-Z0-9,\.!-\s*\[\]]/g, "").split("!");
 
-		if (hostParams.length >= 5) {
+		if (vars.length <= 0) {
+			console.error("Vars is empty", req.url);
+			return result;
+		}
+
+		if (vars[0] === "h") {
 			result.host = true;
-			result.public = hostParams[0] === "pub";
-			const maxPlayers = Number(hostParams[1]);
+
+			let i = 0;
+
+			i++;
+			result.public = vars[i] === "pub";
+
+			i++;
+			const maxPlayers = Number(vars[i]);
 			if (!Number.isNaN(maxPlayers)) {
 				if (maxPlayers > 0) {
 					result.maxPlayers = maxPlayers;
 				}
 			}
-			result.name = profanity.censor(this.truncate(hostParams[2], 16));
-			result.latlng = hostParams[3];
-			result.version = hostParams[4];
 
-			if (hostParams.length > 5) {
-				result.sessionToken = hostParams[5];
+			i++;
+			result.name = profanity.censor(this.truncate(vars[i], 16));
+
+			i++;
+			result.latlng = vars[i];
+
+			i++;
+			result.version = vars[i];
+
+			i++;
+			if (vars.length > i) {
+				result.sessionToken = vars[i];
 			}
+		} else if (vars[0] === "c") {
+			result.host = false;
+		} else {
+			console.error("Invalid var[0]", req.url);
+			return result;
+		}
+
+		if (vars.length >= 5) {
+
 		} else {
 			result.host = false;
 		}
