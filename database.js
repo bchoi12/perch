@@ -48,13 +48,6 @@ class Database {
 			return false;
 		}
 
-		const day = new Date().getDay();
-		if (this.currentDay !== day) {
-			this.totalToday = 0;
-			this.maxToday = 0;
-		}
-		this.currentDay = day;
-
 		if (!this.rooms.has(result.room)) {
 			this.rooms.set(result.room, new Room(result.room, userId));
 		}
@@ -63,6 +56,9 @@ class Database {
 		if (!ok) {
 			return false;
 		}
+
+		this.flushStats();
+
 		this.currentPlayers++;
 		this.totalToday++;
 		this.totalAllTime++;
@@ -135,6 +131,15 @@ class Database {
 		this.updateJSON(roomId);
 	}
 
+	flushStats() {
+		const day = new Date().getDay();
+		if (this.currentDay !== day) {
+			this.totalToday = 0;
+			this.maxToday = 0;
+			this.currentDay = day;
+		}
+	}
+
 	updateJSON(roomId) {
 		if (!this.rooms.has(roomId)) {
 			delete this.json[roomId];
@@ -169,6 +174,8 @@ class Database {
 	}
 
 	statsJSON() {
+		this.flushStats();
+
 		return {
 			games: this.rooms.size,
 			players: this.currentPlayers,
