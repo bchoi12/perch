@@ -154,6 +154,9 @@ class ReqParser {
 	}
 
 	truncate(str, len) {
+		if (!str) {
+			return "";
+		}
 		return str.substring(0, len);
 	}
 }
