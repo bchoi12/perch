@@ -264,9 +264,11 @@ class Room {
 	}
 
 	testJoin(result) {
+		/*
 		if (this.tokens.has(result.token)) {
 			return false;
 		}
+		*/
 		if (this.full()) {
 			return false;
 		}
