@@ -4,6 +4,7 @@ const { ExpressPeerServer } = require("peer");
 const { WebSocketServer } = require("ws");
 const { Database, Room } = require ("./database.js");
 const { ReqParser } = require("./req_parser.js");
+const { Voting } = require("./voting.js");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -25,6 +26,9 @@ let origins = [
   "https://brianchoi.net",
   "http://1351422251404365835.discordsays.com",
   "https://1351422251404365835.discordsays.com",
+
+  "http://sbteam2025.com",
+  "https://sbteam2025.com",
 ];
 const isDev = process.env.NODE_ENV === "development";
 
@@ -145,4 +149,35 @@ app.put("/room", (req, res) => {
     return;
   }
   res.sendStatus(200);
+});
+
+let voting = new Voting();
+app.put("/ask", (req, res) => {
+  if (!req.query || !req.query.q) {
+    res.sendStatus(400);
+    return;
+  }
+
+  voting.ask(req.query.q);
+  res.sendStatus(200);
+});
+app.put("/vote", (req, res) => {
+  if (!req.query || !req.query.v || !req.query.a || !req.query.id) {
+    res.sendStatus(400);
+    return;
+  }
+
+  if (!voting.vote(req.query.v, req.query.id, req.query.a)) {
+    res.sendStatus(400);
+    return;
+  }
+  res.send(voting.refresh(req.query.v));
+});
+app.get("/refresh", (req, res) => {
+  if (!req.query || !req.query.v) {
+    res.sendStatus(400);
+    return;
+  }
+
+  res.send(voting.refresh(req.query.v));
 });
