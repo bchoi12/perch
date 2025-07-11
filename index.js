@@ -27,8 +27,8 @@ let origins = [
   "http://1351422251404365835.discordsays.com",
   "https://1351422251404365835.discordsays.com",
 
-  "http://sbteam2025.com",
-  "https://sbteam2025.com",
+  "http://www.sbteam2025.com",
+  "https://www.sbteam2025.com",
 ];
 const isDev = process.env.NODE_ENV === "development";
 
