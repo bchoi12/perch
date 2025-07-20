@@ -24,6 +24,8 @@ let origins = [
   "https://birdtown.net",
   "http://brianchoi.net",
   "https://brianchoi.net",
+  "http://html-classic.itch.zone",
+  "https://html-classic.itch.zone",
   "http://1351422251404365835.discordsays.com",
   "https://1351422251404365835.discordsays.com",
 
