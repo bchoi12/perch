@@ -244,8 +244,6 @@ class Room {
 				console.error("Token exists or password is incorrect:", result);
 				return false;
 			}
-
-			this.numPlayers++;
 		}
 
 		this.tokens.add(result.token);
