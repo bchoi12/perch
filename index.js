@@ -154,32 +154,56 @@ app.put("/room", (req, res) => {
 });
 
 let voting = new Voting();
+app.put("/start", (req, res) => {
+  voting.start();
+  res.sendStatus(200);
+});
 app.put("/ask", (req, res) => {
   if (!req.query || !req.query.q) {
+    console.error("Bad ask", req.query);
     res.sendStatus(400);
     return;
   }
 
-  voting.ask(req.query.q);
+  voting.ask(req.query.q, req.query.a ? req.query.a : "");
+  res.sendStatus(200);
+});
+app.put("/register", (req, res) => {
+  if (!req.query || !req.query.id || !req.query.n) {
+    console.error("Bad register", req.query);
+    res.sendStatus(400);
+    return;
+  }
+
+  voting.register(req.query.id, req.query.n);
   res.sendStatus(200);
 });
 app.put("/vote", (req, res) => {
   if (!req.query || !req.query.v || !req.query.a || !req.query.id) {
+    console.error("Bad vote", req.query);
     res.sendStatus(400);
     return;
   }
 
   if (!voting.vote(req.query.v, req.query.id, req.query.a)) {
+    console.error("Vote failed", req.query);
     res.sendStatus(400);
     return;
   }
-  res.send(voting.refresh(req.query.v));
+  res.send(voting.refresh(req.query.v, req.query.id));
 });
 app.get("/refresh", (req, res) => {
-  if (!req.query || !req.query.v) {
+  if (!req.query || !req.query.v || !req.query.id) {
+    console.error("Bad refresh", req.query);
     res.sendStatus(400);
     return;
   }
 
-  res.send(voting.refresh(req.query.v));
+  res.send(voting.refresh(req.query.v, req.query.id));
+});
+app.get("/refreshAnswers", (req, res) => {
+  res.send(voting.refreshAnswers());
+});
+app.get("/standings", (req, res) => {
+  res.send(voting.standings());
 });
