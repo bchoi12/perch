@@ -1,10 +1,11 @@
 const express = require("express");
 const cors = require("cors");
+const http = require("http");
 const { ExpressPeerServer } = require("peer");
 const { WebSocketServer } = require("ws");
 const { Database, Room } = require ("./database.js");
 const { ReqParser } = require("./req_parser.js");
-const { Voting } = require("./voting.js");
+const { turnApiKey, turnToken, turnPassword } = require("./secret.js");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -19,7 +20,7 @@ const database = new Database();
 const parser = new ReqParser();
 let origins = [
   "http://bchoi12.itch.io",
-  "https://bchoi12.itch.io",
+  "https://bchoi12.itch.io",  
   "http://birdtown.net",
   "https://birdtown.net",
   "http://brianchoi.net",
@@ -133,25 +134,67 @@ app.get("/rooms", (req, res) => {
 app.get("/stats", (req, res) => {
   res.send(database.statsJSON());
 });
+app.get("/turn", async (req, res) => {
+  if (!req.query || !req.query.pw) {
+    console.log("Missing query or invalid password for turn request");
+    res.sendStatus(400);
+    return;
+  }
+
+  if (req.query.pw !== turnPassword) {
+    console.log("Incorrect turn password", req.query.pw);
+    res.sendStatus(400);
+    return;
+  }
+
+  const url = `https://rtc.live.cloudflare.com/v1/turn/keys/${turnToken}/credentials/generate-ice-servers`
+  await fetch(url, {
+    method: 'POST',
+    headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${turnApiKey}`,
+    },
+    body: JSON.stringify({
+      ttl: 43200,
+    }),
+  })
+  .then(async (response) => {
+    if (!response.ok) {
+      console.error("Failed to generate TURN credentials:", response);
+      res.sendStatus(400);
+      return;
+    }
+
+    const json = await response.json();
+    console.log("Generated TURN credentials");
+    res.send(json);
+  });
+});
 
 // update num players, token used for verification
 app.put("/room", (req, res) => {
   if (!req.query || !req.query.id || !req.query.t || !req.query.p) {
+    console.log("Missing or invalid query for room update");
     res.sendStatus(400);
     return;
   }
   const numPlayers = Number(req.query.p);
   if (Number.isNaN(numPlayers) || numPlayers < 0) {
+    console.log("Invalid number of players for update", numPlayers);
     res.sendStatus(400);
     return;
   }
 
   if (!database.updatePlayers(req.query.id, req.query.t, numPlayers)) {
+    console.log("Failed to update number of players");
     res.sendStatus(400);
     return;
   }
   res.sendStatus(200);
 });
+
+/*
+const { Voting } = require("./voting.js");
 
 let voting = new Voting();
 app.put("/start", (req, res) => {
@@ -207,3 +250,4 @@ app.get("/refreshAnswers", (req, res) => {
 app.get("/standings", (req, res) => {
   res.send(voting.standings());
 });
+*/
