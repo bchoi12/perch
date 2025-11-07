@@ -82,7 +82,10 @@ class Database {
 			return false;
 		}
 
-		this.currentPlayers -= room.numPlayers - numPlayers;
+		// Players are already incremented during join. Just need to decrement when leaving
+		if (room.numPlayers > numPlayers) {
+			this.currentPlayers -= room.numPlayers - numPlayers;
+		}
 		room.setNumPlayers(numPlayers);
 		this.updateJSON(roomId);
 		return true;
