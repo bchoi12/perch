@@ -18,10 +18,10 @@ In addition to peerjs-server features:
 
 /turn generates short-term credentials for using Cloudflare TURN server
 
-Add a file `secret.js` with the following
+Add a file `.env` with the following
 
 ```
-export const turnApiKey = <API_KEY>
-export const turnToken = <TURN_TOKEN_ID>
-export const turnPassword = <PERCH_PASSWORD>
+TURN_API_KEY=<TURN_API_KEY>
+TURN_TOKEN=<TURN_TOKEN>
+TURN_PASSWORD=<TURN_PASSWORD>
 ```

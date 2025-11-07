@@ -12,10 +12,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@2toad/profanity": "^3.1.1",
+    "@2toad/profanity": "^3.2.0",
     "cors": "^2.8.5",
-    "express": "^4.21.1",
-    "ip-location-api": "^2.4.3",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "ip-location-api": "^4.0.2",
     "peer": "^1.0.2"
   }
 }

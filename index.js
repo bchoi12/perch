@@ -1,3 +1,6 @@
+
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
@@ -5,10 +8,12 @@ const { ExpressPeerServer } = require("peer");
 const { WebSocketServer } = require("ws");
 const { Database, Room } = require ("./database.js");
 const { ReqParser } = require("./req_parser.js");
-const { turnApiKey, turnToken, turnPassword } = require("./secret.js");
 
 const app = express();
 const port = process.env.PORT || 3000;
+const turnApiKey = process.env.TURN_API_KEY;
+const turnToken = process.env.TURN_TOKEN;
+const turnPassword = process.env.TURN_PASSWORD
 
 app.get("/", (req, res, next) => res.send("Hello world!"));
 
@@ -37,6 +42,7 @@ const isDev = process.env.NODE_ENV === "development";
 
 if (isDev) {
   console.log("Allowing localhost:8080 origin");
+  console.log("Turn secrets:", turnApiKey, turnToken, turnPassword);
   origins.push("http://localhost:8080");
 }
 const corsOptions = {
