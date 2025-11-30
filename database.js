@@ -131,6 +131,10 @@ class Database {
 		this.currentPlayers -= room.numPlayers;
 		this.rooms.delete(roomId);
 
+		if (this.rooms.size === 0) {
+			this.currentPlayers = 0;			
+		}
+
 		this.updateJSON(roomId);
 	}
 
