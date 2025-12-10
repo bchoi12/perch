@@ -191,7 +191,7 @@ class Database {
 			totalAllTime: this.totalAllTime,
 			maxAllTime: this.maxAllTime,
 			created: this.created,
-			latest: 1095,
+			latest: 1100,
 		}
 	}
 }
